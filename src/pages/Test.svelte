@@ -14,5 +14,5 @@
 
 <h1>
   Hello {prop}!
-  <!-- <Route /> -->
+  <Route />
 </h1>

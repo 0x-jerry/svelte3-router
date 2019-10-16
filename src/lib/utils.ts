@@ -14,3 +14,15 @@ export function sequenceGenerator(start = 0) {
 
   return () => _start++
 }
+
+export function isGrandparent(el: HTMLElement, grandparent: HTMLElement): boolean {
+  let cur = el
+  while (cur.parentElement) {
+    if (cur.parentElement === grandparent) {
+      return true
+    }
+    cur = cur.parentElement
+  }
+
+  return false
+}

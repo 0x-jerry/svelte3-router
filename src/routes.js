@@ -1,15 +1,15 @@
-import { addRoutes } from '../lib'
+import { initializeRoutes } from './lib'
 
-import Test from './Test.svelte'
-import Test2 from './Test2.svelte'
+import Test from './pages/Test.svelte'
+import Test2 from './pages/nest/Test2.svelte'
 
-addRoutes([
+initializeRoutes([
   {
     path: '/',
     component: Test,
     children: [
       {
-        path: 'child1',
+        path: 'child',
         component: Test2
       }
     ]

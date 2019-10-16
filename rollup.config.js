@@ -3,12 +3,14 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
+import typescript from 'rollup-plugin-typescript';
+import sucrase from 'rollup-plugin-sucrase';
 
 const production = !process.env.ROLLUP_WATCH;
 
-const ts_plugin = production
+const ts_plugin = !production
 	? typescript({
-		include: 'src/**',
+		include: 'src/**/*.ts',
 		typescript: require('typescript')
 	})
 	: sucrase({
