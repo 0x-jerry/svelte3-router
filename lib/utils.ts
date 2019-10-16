@@ -1,11 +1,11 @@
-export function traverseNode(rootEl: Node, filter: (el: Node) => boolean, cb: (el: Node) => void) {
+export function traverseNode(rootEl: Node, filter: (el: HTMLElement) => boolean, cb: (el: HTMLElement) => void) {
   //@ts-ignore
-  const nodeIterator = document.createNodeIterator(rootEl, NodeFilter.SHOW_ELEMENT, (node: Node) => {
+  const nodeIterator = document.createNodeIterator(rootEl, NodeFilter.SHOW_ELEMENT, (node: HTMLElement) => {
     return filter(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
   })
 
   while (nodeIterator.nextNode()) {
-    cb(nodeIterator.referenceNode)
+    cb(nodeIterator.referenceNode as HTMLElement)
   }
 }
 

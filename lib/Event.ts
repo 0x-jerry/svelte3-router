@@ -47,7 +47,7 @@ export class Event<T = any> {
     this.events.splice(idx, 1)
   }
 
-  emit(arg: T[]) {
+  emit(arg: T) {
     this.events.forEach((e) => {
       e.cb(arg)
     })

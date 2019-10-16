@@ -1,4 +1,5 @@
 <script>
+  import { onMount, onDestroy } from 'svelte';
   import { mountRoute, destroyRoute, nextRouteId } from "./core";
 
   let id = nextRouteId()
@@ -7,6 +8,9 @@
     mountRoute(id)
   })
 
+  onDestroy(() => {
+    destroyRoute(id)
+  })
 </script>
 
 <style>
@@ -16,7 +20,7 @@
 </style>
 
 <div class="router" route-id={id}>
-  {#if !!selfRoute.component}
+  <!-- {#if !!selfRoute.component}
     <svelte:component this={selfRoute.component} route={selfRoute} />
-  {/if}
+  {/if} -->
 </div>
