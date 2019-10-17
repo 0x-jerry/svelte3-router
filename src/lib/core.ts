@@ -50,15 +50,6 @@ let routerRootEl: HTMLElement | undefined
 
 const allRouteComps: IRouteCompNode[] = []
 
-let _currentRoute: IRouteUpdateProps & {
-  /**
-   * the routes that current active
-   */
-  active?: Partial<IRouteConfig>
-} = {
-  path: location.pathname
-}
-
 /**
  *
  * @param cb return true to break
@@ -84,7 +75,7 @@ export function addRouteUpdateListener(id: string, cb: (r: IRouteUpdateProps) =>
   routeUpdateListens[id] = cb
 
   setTimeout(() => {
-    navigateTo(_currentRoute.path)
+    navigateTo(location.hash.slice(1) || '/')
   }, 1)
 }
 
@@ -107,6 +98,10 @@ function notifyUpdateRoutes(prop: IRouteUpdateProps) {
     updateRoute = updateRoute!.children[0]
   }
 
+  if (updateRoute) {
+    history.pushState({}, 'test', '#' + updateRoute!.fullPath)
+  }
+
   while (updateRoute) {
     updateRoutes.unshift(updateRoute)
     updateRoute = updateRoute.parent
@@ -117,11 +112,11 @@ function notifyUpdateRoutes(prop: IRouteUpdateProps) {
     return
   }
 
-  updateRoutes.forEach((r, deep) => {
-    const comp = allRouteComps.find((r) => r.deep === deep)
+  updateRoutes.forEach((route) => {
+    const comp = allRouteComps.find((rComp) => rComp.deep === route.deep)
 
     const cb = comp && routeUpdateListens[comp.id]
-    cb && cb(r)
+    cb && cb(route)
   })
 }
 
@@ -137,9 +132,9 @@ export function navigateTo(pathOrOption: string | IRouteUpdateProps, query?: any
         }
       : pathOrOption
 
-  notifyUpdateRoutes(option)
+  console.log('Navigate to', option)
 
-  history.pushState(option, 'test', '#' + option.path)
+  notifyUpdateRoutes(option)
 }
 
 function updateRoutesProps() {

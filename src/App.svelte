@@ -3,16 +3,16 @@
   import Test from "./pages/Test.svelte";
 
   export let name = "hello";
-  let path = "/";
+  let switchPath = true;
 
   function clickHanlder() {
-    if (path === "/") {
-      path = "/child2";
-      navigateTo("/child2");
-    } else {
-      path = "/";
+    if (switchPath) {
       navigateTo("/child3");
+    } else {
+      navigateTo("/child2");
     }
+
+    switchPath = !switchPath;
   }
 </script>
 
