@@ -1,71 +1,79 @@
-*Psst — looking for a shareable component template? Go here --> [sveltejs/component-template](https://github.com/sveltejs/component-template)*
+# Svelte3 Router
 
----
+**Note: This is a test project, just verify my thought.**
 
-# svelte app
+Core code in `src/lib`.
 
-This is a project template for [Svelte](https://svelte.dev) apps. It lives at https://github.com/sveltejs/template.
+routes.js
 
-To create a new project based on this template using [degit](https://github.com/Rich-Harris/degit):
+```js
+import { initializeRoutes } from './lib'
 
-```bash
-npx degit sveltejs/template svelte-app
-cd svelte-app
+import Test from './pages/Test.svelte'
+import Test2 from './pages/nest/Test2.svelte'
+import Test3 from './pages/nest/Test3.svelte'
+
+initializeRoutes([
+  {
+    path: '/',
+    component: Test,
+    children: [
+      {
+        path: 'child2',
+        component: Test2
+      },
+      {
+        path: 'child3',
+        component: Test3
+      }
+    ]
+  }
+])
 ```
 
-*Note that you will need to have [Node.js](https://nodejs.org) installed.*
+App.svelte
 
+```html
+<script>
+  import { Router, Route, navigateTo } from "./lib";
 
-## Get started
+  let switchFlag = true;
 
-Install the dependencies...
+  function clickHandler() {
+    if (switchFlag) {
+      navigateTo("/child3");
+    } else {
+      navigateTo("/child2");
+    }
 
-```bash
-cd svelte-app
-npm install
+    switchFlag = !switchFlag;
+  }
+</script>
+
+<Router>
+  <div class="test">
+    <button on:click={clickHandler}>changeRoute</button>
+    <Route />
+  </div>
+</Router>
 ```
 
-...then start [Rollup](https://rollupjs.org):
+Test.svelte
 
-```bash
-npm run dev
-```
+```html
+<script>
+  import { Route } from "../lib";
+</script>
 
-Navigate to [localhost:5000](http://localhost:5000). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
+<style>
+  h1 {
+    color: purple;
+  }
+</style>
 
-By default, the server will only respond to requests from localhost. To allow connections from other computers, edit the `sirv` commands in package.json to include the option `--host 0.0.0.0`.
+<h1>
+  Nest Route
+  <Route />
+</h1>
 
-
-## Deploying to the web
-
-### With [now](https://zeit.co/now)
-
-Install `now` if you haven't already:
-
-```bash
-npm install -g now
-```
-
-Then, from within your project folder:
-
-```bash
-cd public
-now
-```
-
-As an alternative, use the [Now desktop client](https://zeit.co/download) and simply drag the unzipped project folder to the taskbar icon.
-
-### With [surge](https://surge.sh/)
-
-Install `surge` if you haven't already:
-
-```bash
-npm install -g surge
-```
-
-Then, from within your project folder:
-
-```bash
-npm run build
-surge public
 ```

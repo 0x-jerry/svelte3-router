@@ -1,24 +1,22 @@
 <script>
   import { Router, Route, navigateTo } from "./lib";
-  import Test from "./pages/Test.svelte";
 
-  export let name = "hello";
-  let switchPath = true;
+  let switchFlag = true;
 
-  function clickHanlder() {
-    if (switchPath) {
+  function clickHandler() {
+    if (switchFlag) {
       navigateTo("/child3");
     } else {
       navigateTo("/child2");
     }
 
-    switchPath = !switchPath;
+    switchFlag = !switchFlag;
   }
 </script>
 
 <Router>
   <div class="test">
-    <button on:click={clickHanlder}>changeRoute</button>
+    <button on:click={clickHandler}>changeRoute</button>
     <Route />
   </div>
 </Router>

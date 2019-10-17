@@ -74,6 +74,7 @@ const routeUpdateListens: { [key: string]: (r: IRouteUpdateProps) => void } = {}
 export function addRouteUpdateListener(id: string, cb: (r: IRouteUpdateProps) => void) {
   routeUpdateListens[id] = cb
 
+  // !Hack to update route
   setTimeout(() => {
     navigateTo(location.hash.slice(1) || '/')
   }, 1)
@@ -99,7 +100,15 @@ function notifyUpdateRoutes(prop: IRouteUpdateProps) {
   }
 
   if (updateRoute) {
-    history.pushState({}, 'test', '#' + updateRoute!.fullPath)
+    history.pushState(
+      {
+        path: updateRoute.fullPath,
+        params: prop.params,
+        query: prop.query
+      },
+      'svelte3 route',
+      '#' + updateRoute!.fullPath
+    )
   }
 
   while (updateRoute) {
