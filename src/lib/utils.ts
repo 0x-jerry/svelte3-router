@@ -9,10 +9,12 @@ export function traverseNode(rootEl: Node, filter: (el: HTMLElement) => boolean,
   }
 }
 
-export function sequenceGenerator(start = 0) {
+export function sequenceGenerator(start = 1000): () => string {
   let _start = start
 
-  return () => _start++
+  return () => {
+    return (_start++).toString()
+  }
 }
 
 export function isGrandparent(el: HTMLElement, grandparent: HTMLElement): boolean {

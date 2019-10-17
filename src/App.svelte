@@ -1,5 +1,5 @@
 <script>
-  import { Router, Route, updateRoute } from "./lib";
+  import { Router, Route, navigateTo } from "./lib";
   import Test from "./pages/Test.svelte";
 
   export let name = "hello";
@@ -7,11 +7,11 @@
 
   function clickHanlder() {
     if (path === "/") {
-      path = "/child";
-      updateRoute("/child");
+      path = "/child2";
+      navigateTo("/child2");
     } else {
       path = "/";
-      updateRoute("/");
+      navigateTo("/child3");
     }
   }
 </script>

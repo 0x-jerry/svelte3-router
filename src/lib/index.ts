@@ -1,4 +1,4 @@
-export { initializeRoutes, updateRoute } from './core'
+export { initializeRoutes, navigateTo, addRouteUpdateListener, removeRouteUpdateListener } from './core'
 
 //@ts-ignore
 import Route from './Route.svelte'

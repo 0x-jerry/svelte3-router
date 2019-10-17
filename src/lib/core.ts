@@ -1,9 +1,7 @@
-import { SvelteComponent, identity } from 'svelte/internal'
-import { readable } from 'svelte/store'
-import { Event } from './Event'
+import { SvelteComponent } from 'svelte/internal'
 import { sequenceGenerator, traverseNode, isGrandparent } from './utils'
 
-export interface IRouteConfig {
+export interface IRouteProps {
   component: SvelteComponent
   /**
    * eg.
@@ -14,115 +12,63 @@ export interface IRouteConfig {
    */
   path: string
   name?: string
-  children?: IRouteConfig[]
+  children?: IRouteProps[]
+}
+
+interface IRouteConfig extends IRouteProps {
   /**
-   * @private
+   * start with 0
    */
   deep?: number
-  /**
-   * @private
-   */
   fullPath?: string
+  parent?: IRouteConfig
+  children?: IRouteConfig[]
 }
 
-export interface IRoute {
-  path: string
-  component?: SvelteComponent
-  params?: any
-  query?: any
-}
-
-export interface IRouteNode {
+interface IRouteCompNode {
   id: number
   el: HTMLElement
+  /**
+   * start with 0
+   */
   deep: number
-  children: IRouteNode[]
+  parent?: IRouteCompNode
+  children: IRouteCompNode[]
 }
 
-export interface IRouteComponent {
-  id: number
-  component: SvelteComponent
+export interface IRouteUpdateProps {
+  path: string
+  query?: any
+  params?: any
 }
-
-let _routes: IRouteConfig[] = []
-
-let appRootEl: HTMLElement | null = null
-
-const routeTree: IRouteNode = {
-  id: null!,
-  el: null!,
-  deep: 0,
-  children: []
-}
-
-let allRouteComponents: IRouteNode[] = []
-
-const routeComponentIds: number[] = []
 
 export const nextRouteId = sequenceGenerator()
 
-let _currentRoute: IRoute = {
-  path: location.href
+const _routes: IRouteConfig[] = []
+
+let routerRootEl: HTMLElement | undefined
+
+const allRouteComps: IRouteCompNode[] = []
+
+let _currentRoute: IRouteUpdateProps & {
+  /**
+   * the routes that current active
+   */
+  active?: Partial<IRouteConfig>
+} = {
+  path: location.pathname
 }
 
-export const updateRouteOb = new Event<IRoute>()
-
-export const currentRoute = readable(_currentRoute, (set) => {
-  const handler = updateRouteOb.on('default', (val) => {
-    set(val)
-  })!
-
-  set(_currentRoute)
-
-  return () => updateRouteOb.off('default', handler)
-})
-
-export function setRouterRootEl(el: HTMLElement) {
-  appRootEl = el
-}
-
-export function updateRouteComponentsRelation() {
-  if (!appRootEl) {
-    setTimeout(() => {
-      updateRouteComponentsRelation()
-    }, 1)
-    return
-  }
-
-  routeTree.el = appRootEl
-  routeTree.deep = 0
-  routeTree.children = []
-  allRouteComponents = [routeTree]
-
-  traverseNode(
-    appRootEl,
-    (n: HTMLElement) => n.hasAttribute('route-id'),
-    (el) => {
-      const parent = allRouteComponents.find((info) => isGrandparent(el, info.el))
-      const id = Number(el.getAttribute('route-id'))
-      console.log('id', id, el)
-
-      if (parent) {
-        const route: IRouteNode = {
-          id,
-          el,
-          deep: parent.deep + 1,
-          children: []
-        }
-
-        parent.children.push(route)
-
-        allRouteComponents.push(route)
-      } else {
-        console.warn('Can not find the grandparent node:', id)
-      }
-    }
-  )
-}
-
-function traverseRouteConfig(cb: (route: IRouteConfig) => void) {
+/**
+ *
+ * @param cb return true to break
+ */
+function traverseRouteConfig(cb: (route: IRouteConfig) => any) {
   const traverse = (route: IRouteConfig) => {
-    cb(route)
+    if (!!cb(route)) {
+      return
+    }
+
     route.children &&
       route.children.forEach((r) => {
         traverse(r)
@@ -132,31 +78,60 @@ function traverseRouteConfig(cb: (route: IRouteConfig) => void) {
   _routes.forEach((r) => traverse(r))
 }
 
-function notifyRoutes(option: IRoute) {
-  let route: IRouteConfig | null = null
+const routeUpdateListens: { [key: string]: (r: IRouteUpdateProps) => void } = {}
+
+export function addRouteUpdateListener(id: string, cb: (r: IRouteUpdateProps) => void) {
+  routeUpdateListens[id] = cb
+
+  setTimeout(() => {
+    navigateTo(_currentRoute.path)
+  }, 1)
+}
+
+export function removeRouteUpdateListener(id: string) {
+  delete routeUpdateListens[id]
+}
+
+function notifyUpdateRoutes(prop: IRouteUpdateProps) {
+  let updateRoute: IRouteConfig | undefined
+  const updateRoutes: IRouteConfig[] = []
 
   traverseRouteConfig((r) => {
-    if (r.fullPath === option.path) {
-      route = r
+    if (r.fullPath === prop.path) {
+      updateRoute = r
+      return true
     }
   })
 
-  if (route) {
-    const comp = allRouteComponents.find((r) => r.deep === route!.deep)
-    if (!comp) return
-
-    option.component = route!.component
-    console.log(`Update route ${comp.id}:`, route, comp)
-
-    updateRouteOb.emit('default', option)
-    updateRouteOb.emit(comp.id.toString(), option)
+  while (updateRoute && updateRoute!.children && updateRoute.children.length > 0) {
+    updateRoute = updateRoute!.children[0]
   }
+
+  while (updateRoute) {
+    updateRoutes.unshift(updateRoute)
+    updateRoute = updateRoute.parent
+  }
+
+  if (updateRoutes.length <= 0) {
+    console.warn("Can't find routes with path:", prop.path)
+    return
+  }
+
+  console.log(routeUpdateListens)
+
+  updateRoutes.forEach((r, deep) => {
+    const comp = allRouteComps.find((r) => r.deep === deep)
+
+    const cb = comp && routeUpdateListens[comp.id]
+    cb && cb(r)
+  })
 }
 
-export function updateRoute(option: IRoute): void
-export function updateRoute(path: string, query?: any, params?: any): void
-export function updateRoute(pathOrOption: string | IRoute, query?: any, params?: any): void {
-  const option =
+export function navigateTo(option: IRouteUpdateProps): void
+export function navigateTo(path: string, query?: any, params?: any): void
+export function navigateTo(pathOrOption: string | IRouteUpdateProps, query?: any, params?: any): void {
+  console.log('navigateTo', _routes, allRouteComps)
+  const option: IRouteUpdateProps =
     typeof pathOrOption === 'string'
       ? {
           path: pathOrOption,
@@ -165,19 +140,20 @@ export function updateRoute(pathOrOption: string | IRoute, query?: any, params?:
         }
       : pathOrOption
 
-  notifyRoutes(option)
+  notifyUpdateRoutes(option)
 }
 
 function updateRoutesProps() {
   const traverse = (route: IRouteConfig, parent?: IRouteConfig) => {
     if (parent) {
       route.deep = parent.deep! + 1
-
       route.fullPath = parent.fullPath! + (parent.fullPath!.endsWith('/') ? '' : '/') + route.path
     } else {
       route.deep = 0
       route.fullPath = route.path
     }
+
+    route.parent = parent
 
     route.children &&
       route.children.forEach((r) => {
@@ -190,24 +166,78 @@ function updateRoutesProps() {
   })
 }
 
-export function initializeRoutes(routes: IRouteConfig[]) {
-  _routes = routes
-  updateRoutesProps()
+export function initializeRoutes(routes: IRouteProps[]) {
+  _routes.splice(0)
+  appendRoutes(...routes)
 }
 
-export function appendRoutes(...routes: IRouteConfig[]) {
+export function appendRoutes(...routes: IRouteProps[]) {
   _routes.push(...routes)
   updateRoutesProps()
 }
 
-export function mountRoute(id: number) {
-  routeComponentIds.push(id)
-  updateRouteComponentsRelation()
+export function mountRoute() {
+  updateRouteCompRelations()
 }
 
-export function destroyRoute(id: number) {
-  const idx = routeComponentIds.indexOf(id)
+export function destroyRoute() {
+  updateRouteCompRelations()
+}
 
-  routeComponentIds.splice(idx, 1)
-  updateRouteComponentsRelation()
+export function setRouterRootEl(el: HTMLElement) {
+  routerRootEl = el
+  updateRouteCompRelations()
+}
+
+export function updateRouteCompRelations() {
+  if (!routerRootEl) {
+    return
+  }
+
+  const treeRoot: IRouteCompNode = {
+    id: null!,
+    el: routerRootEl,
+    deep: -1,
+    parent: undefined,
+    children: []
+  }
+
+  allRouteComps.splice(0)
+  allRouteComps.push(treeRoot)
+
+  traverseNode(
+    routerRootEl,
+    (n: HTMLElement) => n.hasAttribute('route-id'),
+    (el) => {
+      let parentComp: IRouteCompNode | null = null
+
+      for (let i = allRouteComps.length - 1; i >= 0; i--) {
+        if (isGrandparent(el, allRouteComps[i].el)) {
+          parentComp = allRouteComps[i]
+          break
+        }
+      }
+
+      const id = Number(el.getAttribute('route-id'))
+
+      if (parentComp) {
+        const route: IRouteCompNode = {
+          id,
+          el,
+          deep: parentComp.deep + 1,
+          parent: parentComp === treeRoot ? undefined : parentComp,
+          children: []
+        }
+
+        parentComp.children.push(route)
+
+        allRouteComps.push(route)
+      } else {
+        console.warn('Can not find the grandparent node:', id)
+      }
+    }
+  )
+
+  allRouteComps.shift()
+  console.log('allRouteComps', allRouteComps)
 }

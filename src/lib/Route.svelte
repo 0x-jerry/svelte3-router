@@ -1,21 +1,36 @@
 <script>
   import s from "svelte";
-  import { mountRoute, destroyRoute, nextRouteId, updateRouteOb } from "./core";
+  import {
+    mountRoute,
+    destroyRoute,
+    nextRouteId,
+    addRouteUpdateListener,
+    removeRouteUpdateListener
+  } from "./core";
   const { onMount, onDestroy } = s;
 
   let id = nextRouteId();
   let route = {};
 
-  updateRouteOb.on(id.toString(), r => {
-    route = r;
-  });
+  $: routeProp = {
+    fullpath: route.fullPath,
+    query: route.query,
+    params: route.params
+  };
 
   onMount(() => {
-    mountRoute(id);
+    mountRoute();
+    addRouteUpdateListener(id, r => {
+      if (route.component === r.component) {
+        return;
+      }
+      route = r;
+    });
   });
 
   onDestroy(() => {
-    destroyRoute(id);
+    destroyRoute();
+    removeRouteUpdateListener(id);
   });
 </script>
 
@@ -27,6 +42,6 @@
 
 <div class="router" route-id={id}>
   {#if !!route.component}
-    <svelte:component this={route.component} {route} />
+    <svelte:component this={route.component} route={routeProp} />
   {/if}
 </div>

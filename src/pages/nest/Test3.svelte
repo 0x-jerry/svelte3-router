@@ -1,6 +1,4 @@
 <script>
-  import { Route } from "../lib";
-
   export let route = {};
 </script>
 
@@ -10,7 +8,4 @@
   }
 </style>
 
-<h1>
-  Nest Route
-  <Route />
-</h1>
+<h1>Route child 33333</h1>

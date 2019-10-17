@@ -1,7 +1,6 @@
 <script>
-  export let prop = "test2";
   export let route = {};
-  console.log("test2", route);
+  console.log('Route prop is', route)
 </script>
 
 <style>
@@ -10,4 +9,4 @@
   }
 </style>
 
-<h1>Hello {prop}!</h1>
+<h1>Route child 2222</h1>
