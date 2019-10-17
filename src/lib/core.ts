@@ -117,8 +117,6 @@ function notifyUpdateRoutes(prop: IRouteUpdateProps) {
     return
   }
 
-  console.log(routeUpdateListens)
-
   updateRoutes.forEach((r, deep) => {
     const comp = allRouteComps.find((r) => r.deep === deep)
 
@@ -130,7 +128,6 @@ function notifyUpdateRoutes(prop: IRouteUpdateProps) {
 export function navigateTo(option: IRouteUpdateProps): void
 export function navigateTo(path: string, query?: any, params?: any): void
 export function navigateTo(pathOrOption: string | IRouteUpdateProps, query?: any, params?: any): void {
-  console.log('navigateTo', _routes, allRouteComps)
   const option: IRouteUpdateProps =
     typeof pathOrOption === 'string'
       ? {
@@ -141,6 +138,8 @@ export function navigateTo(pathOrOption: string | IRouteUpdateProps, query?: any
       : pathOrOption
 
   notifyUpdateRoutes(option)
+
+  history.pushState(option, 'test', '#' + option.path)
 }
 
 function updateRoutesProps() {
